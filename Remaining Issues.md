@@ -6,7 +6,7 @@ OpenCode V1 Bridge is a **server-first compatibility adapter** intended to run s
 
 This document explains the principal known gaps, why they exist, and approaches contributors might investigate. It is **not** a claim that every V1 API has been individually implemented or exhaustively tested. The public [README](README.md) should remain the authority for which features are actually supported in a particular release.
 
-The initial release scope is server-first. Experimental work is outside the supported server-first workflow. Where `0.82.0-beta.4` exposes an experimental option, this document identifies it explicitly. Native scheduler acceptance of the exact final package remains pending.
+The initial release scope is server-first. Experimental work is outside the supported server-first workflow. Where `0.82.0-beta.4` exposes an experimental option, this document identifies it explicitly. The exact beta.4 archive passed a scoped native scheduler test on stock OpenCode 2.0.27. The unchanged Personality `setMood` ran once, persisted the expected output and project state, and delivered the result to the next scripted request. That acceptance was server-only. The separate command-output and TUI findings remain open.
 
 ### How to read the status labels
 
@@ -123,14 +123,16 @@ This is a potentially high-impact area for plugins that customize model requests
 
 **Security requirement:** Never treat an observer notification as permission to authorize an operation. This area would particularly benefit from experienced security reviewers.
 
-## 6. Workspace-scoped confirmed command output
+## 6. Confirmed command output ownership and workspace routing
 
-**Status:** Host routing limitation.  
+**Status:** Opt-in experimental delivery with a host routing and caller-ownership limitation.  
 **Estimated difficulty:** Likely medium if workspace-aware host routing becomes available.
 
-**What works in the supported scope.** The bridge has a confirmed-output mechanism that selects a consumer, correlates its receipt, and refuses a command before the legacy hook runs when consumer readiness cannot be established. The beta.2 native server witness verified the pre-entry **no-consumer** refusal.
+**Implemented mechanism.** Declaring `targets[].commands` explicitly enables confirmed command output. The bridge selects a consumer, correlates its receipt, and refuses the command before the legacy hook runs when consumer readiness cannot be established. An earlier beta.2 server-only run recorded pre-entry no-consumer behavior. Beta.4’s after-disconnect NO-CONSUMER acceptance and authenticated caller ownership (Witness B) remain open.
 
-**What is missing.** Workspace-scoped confirmed delivery cannot safely route a receipt to the required workspace using V2.0.27's public HTTP RPC mechanism. The public location query selects by directory and carries no workspace selector, including when two workspaces share a directory. Those requests deliberately fail before hook execution rather than accepting an ambiguous acknowledgment.
+**What is missing.** Workspace-scoped confirmed delivery cannot safely route a receipt to the required workspace using V2.0.27's public HTTP RPC mechanism. The public location query selects by directory and carries no workspace selector, including when two workspaces share a directory. Those requests fail before hook execution. The stock host authenticates access to the server and uses a caller-supplied directory for RPC routing. It supplies no independent originating session, project principal, or TUI identity to the receipt handler. The host event stream can expose output to other authenticated subscribers. Selection IDs provide correlation, expiry and replay handling within a trusted environment. They do not establish confidentiality or authenticated acknowledgment across clients.
+
+**Deployment boundary.** Keep command output disabled where possible. If a target requires explicit command registration, use a dedicated password-protected loopback instance for one trusted project and trusted clients. Do not enable it on shared or remotely reachable servers, including proxied or tunneled loopback listeners. Avoid sensitive command output. The shipped package has no public TUI companion entrypoint. [Security and trust boundaries](SECURITY.md)
 
 **Ideas worth investigating:**
 
