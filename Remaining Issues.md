@@ -6,7 +6,7 @@ OpenCode V1 Bridge is a **server-first compatibility adapter** intended to run s
 
 This document explains the principal known gaps, why they exist, and approaches contributors might investigate. It is **not** a claim that every V1 API has been individually implemented or exhaustively tested. The public [README](README.md) should remain the authority for which features are actually supported in a particular release.
 
-The initial release scope is server-first. Experimental work is outside the supported server-first workflow. Where `0.82.0-beta.3` exposes an experimental option, this document identifies it explicitly. Native scheduler acceptance of the exact final package remains pending.
+The initial release scope is server-first. Experimental work is outside the supported server-first workflow. Where `0.82.0-beta.4` exposes an experimental option, this document identifies it explicitly. Native scheduler acceptance of the exact final package remains pending.
 
 ### How to read the status labels
 
@@ -110,7 +110,7 @@ This is a potentially high-impact area for plugins that customize model requests
 
 **What V1 provided.** Plugins could participate in permission decisions, potentially allowing, denying, or requesting approval for operations.
 
-**What the bridge has.** Beta.3 exposes the experimental, per-target `pendingPermissionObserver` option. It reports selected already-pending native requests and has no authority to approve or deny them. The standard server profile leaves V1 `ToolContext.ask` unavailable. Native tool permissions still apply.
+**What the bridge has.** Beta.4 exposes the experimental, per-target `pendingPermissionObserver` option. It reports selected already-pending native requests and has no authority to approve or deny them. The standard server profile leaves V1 `ToolContext.ask` unavailable. Native tool permissions still apply.
 
 **Why this is missing.** A faithful translation needs verified request identity, ownership, decision ordering, and an authoritative V2 permission-decision interface. The v2.0.27 public predecision callback lacks the authoritative request identity. The pending request becomes visible afterward and may settle independently, so a later lookup cannot supply the missing predecision correlation.
 
@@ -142,7 +142,7 @@ The existing fail-closed behavior must remain until an alternative meets those s
 
 ## 7. `client.tui.showToast` — experimental toast support
 
-**Status:** Implemented experimentally; **not exposed by the beta.3 server-first package**.  
+**Status:** Implemented experimentally; **not exposed by the beta.4 server-first package**.  
 **Estimated difficulty:** Medium; meaningful implementation work already exists.
 
 An isolated development candidate provides per-target opt-in toast handling with consumer leases and correlated acknowledgments. It successfully executed the unchanged `opencode-personality@1.2.0` `savePersonality` tool **offline**, including one project-local JSON write, one accepted receipt through a controlled presentation port, and the original successful result.
@@ -209,7 +209,7 @@ Offline work corrected a defect where multiple companions could display the same
 
 ### Restricted `client.mcp.status`
 
-The internal restricted adapter supports settled `connected` and `disabled` states. A separate internal profile can also project `failed` with its error. Pending and authentication-required states fail explicitly. The beta.3 public server entrypoint does not expose the method. MCP service initialization can establish connections even if the method eventually reads only a status snapshot. No confirmed authentic plugin consumer has been identified in the reviewed set. This is a possible future addition rather than a demonstrated initial-release blocker.
+The internal restricted adapter supports settled `connected` and `disabled` states. A separate internal profile can also project `failed` with its error. Pending and authentication-required states fail explicitly. The beta.4 public server entrypoint does not expose the method. MCP service initialization can establish connections even if the method eventually reads only a status snapshot. No confirmed authentic plugin consumer has been identified in the reviewed set. This is a possible future addition rather than a demonstrated initial-release blocker.
 
 ### Final artifact scheduler acceptance
 

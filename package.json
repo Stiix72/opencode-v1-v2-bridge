@@ -1,6 +1,6 @@
 {
   "name": "opencode-v1-bridge",
-  "version": "0.82.0-beta.3",
+  "version": "0.82.0-beta.4",
   "private": true,
   "license": "MIT",
   "description": "Server-first compatibility bridge for supported OpenCode V1 plugins on OpenCode 2.0.27.",
@@ -25,7 +25,9 @@
     "src/*.d.ts",
     "README.md",
     "LICENSE",
-    "THIRD-PARTY-NOTICES.md"
+    "THIRD-PARTY-NOTICES.md",
+    "Remaining Issues.md",
+    "CONTRIBUTING.md"
   ],
   "scripts": {
     "test": "node --test",

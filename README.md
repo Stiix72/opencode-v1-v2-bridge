@@ -2,7 +2,7 @@
 
 OpenCode V1 Bridge lets stock OpenCode **2.0.27** load explicitly configured V1 plugins through its server-plugin interface. The bridge translates supported V1 tools, hooks, and client calls into native V2 operations. If a plugin uses those interfaces, you can try it unchanged before deciding whether to port it.
 
-**Beta status.** The `0.82.0-beta.3` candidate is privately staged. Verification has focused on Windows and server-only workflows. Beta.3 passed offline package and regression checks. Native scheduler verification on the final package is pending. See [Remaining Issues](Remaining%20Issues.md) for open work and ways to help.
+**Beta status.** The `0.82.0-beta.4` candidate is privately staged. Verification has focused on Windows and server-only workflows. Beta.3 passed offline package and regression checks. Beta.4 uses the same runtime implementation. Native scheduler verification on the final package is pending. See [Remaining Issues](Remaining%20Issues.md) for open work and ways to help.
 
 ## Install and configure on Windows
 
@@ -12,7 +12,7 @@ Use a local source checkout or a supplied beta tarball and stock OpenCode **2.0.
 2. Install the local tarball into a new disposable directory. Run the following from the directory containing the archive. Change the destination if it already exists.
 
 ```powershell
-$archive = (Resolve-Path -LiteralPath '.\opencode-v1-bridge-0.82.0-beta.3.tgz').Path
+$archive = (Resolve-Path -LiteralPath '.\opencode-v1-bridge-0.82.0-beta.4.tgz').Path
 $adapterHome = Join-Path (Get-Location).Path 'opencode-bridge-local'
 New-Item -ItemType Directory -Path $adapterHome -ErrorAction Stop | Out-Null
 Push-Location -LiteralPath $adapterHome
@@ -84,7 +84,7 @@ The original plugin needs an active project personality with known moods in `.op
 }
 ```
 
-The tested input was `{"mood":"angry","duration":"permanent"}` with the original result `Mood changed to angry`. The sample is for the `setMood` tool workflow. `savePersonality` calls toast after writing, so it can change project state and then report an error under this profile.
+The tested input was `{"mood":"angry","duration":"permanent"}` with the original result `Mood changed to angry`. The sample is for the `setMood` tool workflow. The original `savePersonality` writes project JSON before calling the unsupported toast method. It can report an error after changing local state.
 
 ## What works
 
