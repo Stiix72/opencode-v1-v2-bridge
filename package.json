@@ -1,0 +1,43 @@
+{
+  "name": "opencode-v1-bridge",
+  "version": "0.82.0-beta.3",
+  "private": true,
+  "license": "MIT",
+  "description": "Server-first compatibility bridge for supported OpenCode V1 plugins on OpenCode 2.0.27.",
+  "type": "module",
+  "main": "./server.js",
+  "types": "./server.d.ts",
+  "exports": {
+    ".": {
+      "types": "./server.d.ts",
+      "import": "./server.js"
+    },
+    "./server": {
+      "types": "./server.d.ts",
+      "import": "./server.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "server.js",
+    "server.d.ts",
+    "src/*.js",
+    "src/*.d.ts",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "build": "node scripts/check-source.mjs",
+    "typecheck": "tsc -p tsconfig.types.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "opencodeHostVersion": "2.0.27",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Stiix72/opencode-v1-v2-bridge.git"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "provenance": "Source-derived examples, not captured runtime events: schema/src/session-event.ts, event.ts; core/src/session/runner/step.ts and publish-llm-event.ts at archived v2.0.27.",
+  "created": {"id":"evt_created","type":"session.created","created":1000,"durable":{"aggregateID":"ses_one","seq":0,"version":1},"data":{"sessionID":"ses_one","projectID":"prj_fixture","location":{"directory":"C:/fixture-project"},"slug":"fixture","version":"2.0.27"}},
+  "started": {"id":"evt_started","type":"session.step.started","created":1001,"durable":{"aggregateID":"ses_one","seq":1,"version":1},"data":{"sessionID":"ses_one","assistantMessageID":"msg_one","agent":"build","model":{"providerID":"fixture","id":"fixture"},"started":1001}},
+  "retry": {"id":"evt_retry","type":"session.retry.scheduled","created":1002,"durable":{"aggregateID":"ses_one","seq":2,"version":1},"data":{"sessionID":"ses_one","assistantMessageID":"msg_one","attempt":1,"at":1003,"error":{"type":"api","message":"offline example"}}},
+  "delta": {"id":"evt_delta","type":"session.text.delta","created":1004,"data":{"sessionID":"ses_one","assistantMessageID":"msg_one","ordinal":0,"delta":"example"}},
+  "textEnded": {"id":"evt_text","type":"session.text.ended","created":1005,"durable":{"aggregateID":"ses_one","seq":5,"version":1},"data":{"sessionID":"ses_one","assistantMessageID":"msg_one","ordinal":0,"text":"example"}},
+  "streamed": {"id":"evt_streamed","type":"session.step.streamed","created":1006,"durable":{"aggregateID":"ses_one","seq":6,"version":1},"data":{"sessionID":"ses_one","assistantMessageID":"msg_one"}},
+  "ended": {"id":"evt_ended","type":"session.step.ended","created":1007,"location":{"directory":"C:/fixture-project"},"metadata":{"audit":"preserve"},"durable":{"aggregateID":"ses_one","seq":7,"version":1},"data":{"sessionID":"ses_one","assistantMessageID":"msg_one","finish":"stop","rawFinish":"stop","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}},"providerState":{"example":true},"files":[]}},
+  "failed": {"id":"evt_failed","type":"session.step.failed","created":1008,"durable":{"aggregateID":"ses_one","seq":8,"version":1},"data":{"sessionID":"ses_one","assistantMessageID":"msg_two","error":{"type":"aborted","message":"offline interrupted-message example"}}},
+  "executionEnded": {"id":"evt_execution","type":"session.execution.succeeded","created":1009,"durable":{"aggregateID":"ses_one","seq":9,"version":1},"data":{"sessionID":"ses_one"}},
+  "deleted": {"id":"evt_deleted","type":"session.deleted","created":1010,"durable":{"aggregateID":"ses_one","seq":10,"version":2},"data":{"sessionID":"ses_one"}}
+}

@@ -1,0 +1,2 @@
+# Preserve published source and notice bytes across Git checkout settings.
+* -text
