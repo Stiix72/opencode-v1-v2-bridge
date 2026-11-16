@@ -2,7 +2,7 @@
 
 OpenCode V1 Bridge lets stock OpenCode **2.0.27** load explicitly configured V1 plugins through its server-plugin interface. The bridge translates supported V1 tools, hooks, and client calls into native V2 operations. If a plugin uses those interfaces, you can try it unchanged before deciding whether to port it.
 
-**Beta status.** Version `0.82.0-beta.4` is a server-first beta for stock OpenCode **2.0.27**. Verification has focused on Windows. The exact beta.4 package passed a genuine-host scheduler test with the unchanged Personality plugin. See [Remaining Issues](Remaining%20Issues.md) for unsupported behavior and ways to help.
+**Beta status.** Version `0.82.0-beta.4` is a server-first beta for stock OpenCode **2.0.27**. Verification has focused on Windows. The exact beta.4 package passed a genuine-host scheduler test with an unchanged V1 plugin. See the [compatibility evidence](#tested-with-unchanged-v1-plugins) for the test scope and [Remaining Issues](Remaining%20Issues.md) for unsupported behavior and ways to help.
 
 ## Install and configure on Windows
 
@@ -73,30 +73,6 @@ Add these keys under the bridge entry’s `options` only when the plugin needs t
 | `metadata: "live-json"` | Publishes supported JSON tool metadata as native progress. The historical durable metadata lifecycle and independent title behavior are unavailable. |
 | `targets[].commands` | Explicit, experimental opt-in for a target with `command.execute.before`. Trust the entire local server and all its clients. Leave it disabled for targets that work without it. The stock package exposes the producer only. An eligible consumer is required before the hook runs. |
 
-### Try the Personality configuration
-
-The original plugin needs an active project personality with known moods in `.opencode/personality.json` for `setMood` to register. Use the plugin’s own configuration format, with mood drift and toast disabled for the initial check. This original plugin declares a command hook and requires the explicit command names below to activate. Use this example only in the dedicated local environment described above. The native test exercised `setMood` without dispatching the registered slash commands. Replace the bridge entry’s `options` with the following and adjust the original plugin path.
-
-```json
-{
-  "version": 1,
-  "toolExposure": "direct",
-  "targets": [
-    {
-      "id": "personality",
-      "module": "./legacy/opencode-personality/dist/index.js",
-      "commands": ["mood", "personality"]
-    }
-  ],
-  "clientOptions": {"responseStyle": "data", "throwOnError": true},
-  "logging": "stderr",
-  "system": "session-text",
-  "events": "terminal-assistant"
-}
-```
-
-The tested input was `{"mood":"angry","duration":"permanent"}` with the original result `Mood changed to angry`. The sample is for the `setMood` tool workflow. The original `savePersonality` writes project JSON before calling the unsupported toast method. It can report an error after changing local state.
-
 ## What works
 
 - **Plugin activation.** Load trusted V1 entry files, installed packages, or exported package subpaths. Provide per-plugin JSON factory options when needed. Declared `dispose` hooks participate in activation cleanup.
@@ -123,11 +99,17 @@ The tested input was `{"mood":"angry","duration":"permanent"}` with the original
 
 ## Tested with unchanged V1 plugins
 
+The plugins listed here are independent third-party projects used to test compatibility. Each is developed and distributed separately by its own maintainers.
+
 | Plugin | Evidence |
 | --- | --- |
 | `opencode-personality@1.2.0` | The exact beta.4 tarball passed one scheduler-selected original `setMood` call on stock OpenCode 2.0.27 using two scripted local responses. The run verified the project JSON update, one acknowledged stderr log, a durable successful tool result, its delivery to the second request, and natural shutdown. The test used no provider inference or TUI. |
 | `opencode-yaml-hooks@2026.3.29` | Native beta.2 loaded the original package with an action-free configuration. A separate probe in that run received the native creation callback. Beta.3 exercised the original plugin’s selected lifecycle callbacks offline using the installed bridge. Configured shell, command, and prompt actions remain unverified. |
 | `@mohak34/opencode-notifier@0.1.11` | Evaluated offline. The reduced event and pending-permission profiles cover only part of the original plugin’s needs. Native activation, desktop notifications, and sound remain unverified. |
+
+The Personality `setMood` test used an active project personality with known moods in `.opencode/personality.json`, with mood drift and toast disabled. The tool received `{"mood":"angry","duration":"permanent"}` and returned `Mood changed to angry`. The fixture listed `mood` and `personality` as command names for activation. The scheduler test invoked only `setMood`.
+
+In project scope, the original `savePersonality` writes `.opencode/personality.json` before calling the unsupported `client.tui.showToast` method. An error can leave the file changed.
 
 The frozen beta.2 server-only run recorded an audit failure. A separate re-audit traced it to the comparison of a SQLite row’s object prototype and verified the recorded observation without changing the original verdict.
 
