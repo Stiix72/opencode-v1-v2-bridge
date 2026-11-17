@@ -1,6 +1,5 @@
 /**
- * Host-independent legacy tool translation. Produces descriptors for a V2
- * registrar; does NOT claim to register them with OpenCode 2.0.27.
+ * Host-independent legacy tool translation. Produces descriptors for a V2 registrar.
  * Schema conversion is explicit to avoid treating Zod v3 as Standard Schema.
  */
 import { createLegacyToolContext } from './legacy-context.js'
@@ -58,12 +57,16 @@ async function executeWithProgress(execute, args, context, name, assertActive) {
   const pending = new Set(), failures = []
   const metadataOwner = Symbol('legacy tool metadata invocation')
   let accepting = true, result, executionError, executionFailed = false
+  const assertCanExecute = () => {
+    assertActive()
+    context.abort.throwIfAborted()
+  }
   const ownedContext = Object.freeze({
     ...context,
     metadata(...values) {
       if (!accepting) throw new LegacyToolConversionError(name, 'ToolContext.metadata called after execution completed')
       let value
-      try { assertActive(); value = invokeToolMetadata(context.metadata, this, values, assertActive, metadataOwner) }
+      try { assertCanExecute(); value = invokeToolMetadata(context.metadata, this, values, assertCanExecute, metadataOwner) }
       catch (error) { failures.push(error); throw error }
       const operation = Promise.resolve(value)
       pending.add(operation)
@@ -76,7 +79,7 @@ async function executeWithProgress(execute, args, context, name, assertActive) {
       return value === undefined ? undefined : operation
     },
   })
-  try { assertActive(); claimToolMetadata(context.metadata, metadataOwner); result = await execute(args, ownedContext) }
+  try { assertCanExecute(); claimToolMetadata(context.metadata, metadataOwner); result = await execute(args, ownedContext) }
   catch (error) { executionFailed = true; executionError = error }
   finally { accepting = false }
   // No new progress can enter after the callback settles. Never call cancel,

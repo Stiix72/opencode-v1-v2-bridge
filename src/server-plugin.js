@@ -1,4 +1,4 @@
-/** Installable OpenCode 2.0.27 Promise plugin. Host APIs only; no fixture imports. */
+/** Installable OpenCode Promise plugin for the explicitly supported host versions. */
 import path from 'node:path'
 import {isDeepStrictEqual} from 'node:util'
 import {createPendingPermissionObserverMapper,snapshotPendingPermissionRequest} from './pending-permission-observer.js'
@@ -20,6 +20,7 @@ const describe=(error,depth=0)=>depth>6?'nested error':error instanceof Aggregat
 export class ServerActivationError extends Error {
   constructor(message,cause){super(cause?message+': '+describe(cause):message,{cause});this.name='ServerActivationError';if(cause?.cleanupFailed)this.cleanupFailed=true}
 }
+const supportedHostVersions = ['2.3.0', '2.0.27']
 const samePath=(a,b)=>typeof a==='string'&&typeof b==='string'&&
   (process.platform==='win32'?path.resolve(a).toLowerCase()===path.resolve(b).toLowerCase():path.resolve(a)===path.resolve(b))
 const method=(ctx,domain,key)=>{
@@ -37,8 +38,17 @@ export function createServerPlugin(){
     const state={phase:'initializing'};contexts.set(ctx,state)
     let close
     try{
-      const config=validateServerOptions(ctx.options),owner=ownerOf(ctx)
-      if(ctx.app?.version!=='2.0.27')throw new ServerActivationError('This server entrypoint requires OpenCode 2.0.27')
+      const version = ctx.app?.version
+      if (!supportedHostVersions.includes(version)) {
+        throw new ServerActivationError('This server entrypoint requires OpenCode ' + supportedHostVersions.join(' or '))
+      }
+      const config=validateServerOptions(ctx.options)
+      // On 2.3.0 the scheduler may expose CodeMode tools directly when execute is denied.
+      // The Promise plugin cannot require the gateway for each request.
+      if (version === '2.3.0' && config.toolExposure === 'code-mode') {
+        throw new ServerConfigurationError('OpenCode 2.3.0 can expose CodeMode tools directly; use direct tool exposure')
+      }
+      const owner=ownerOf(ctx)
       const location=ctx.location,project=location.project
       const required=[['tool','transform'],['tool','list'],['tool','hook'],['session','get'],['session','hook']]
       const hasPermissionObservers=config.targets.some(target=>target.pendingPermissionObserver===true)

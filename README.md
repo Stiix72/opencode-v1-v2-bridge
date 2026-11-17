@@ -1,27 +1,34 @@
 # OpenCode V1 Bridge
 
-OpenCode V1 Bridge lets stock OpenCode **2.0.27** load explicitly configured V1 plugins through its server-plugin interface. The bridge translates supported V1 tools, hooks, and client calls into native V2 operations. If a plugin uses those interfaces, you can try it unchanged before deciding whether to port it.
+OpenCode V1 Bridge lets stock OpenCode load explicitly configured V1 plugins through its server-plugin interface. The bridge translates supported V1 tools, hooks, and client calls into native V2 operations. If a plugin uses those interfaces, you can try it unchanged before deciding whether to port it.
 
-**Beta status.** Version `0.82.0-beta.4` is a server-first beta for stock OpenCode **2.0.27**. Verification has focused on Windows. The exact beta.4 package passed a genuine-host scheduler test with an unchanged V1 plugin. See the [compatibility evidence](#tested-with-unchanged-v1-plugins) for the test scope and [Remaining Issues](Remaining%20Issues.md) for unsupported behavior and ways to help.
+> **Experimental preview · offline verified only.** `0.82.0-preview.1` targets stock OpenCode **2.3.0** and retains an exact **2.0.27** entrypoint. This preview has yet to pass genuine-host acceptance on either version. Use it in a disposable, trusted-local project.
+
+## Host versions and evidence
+
+| Version and package | Evidence |
+| --- | --- |
+| OpenCode 2.3.0 with preview.1 | Primary preview target. Offline bridge tests and released-source contract checks passed. Actual OpenCode scheduler, database, cancellation, and shutdown acceptance remain open. |
+| OpenCode 2.0.27 with preview.1 | Retained compatibility target. Offline bridge tests and archived-source tool checks passed. The current candidate’s native regression remains open. |
+| OpenCode 2.0.27 with historical beta.4 | The separately published beta.4 package passed a scoped native scheduler witness with one unchanged V1 tool. See [third-party compatibility evidence](#tested-with-unchanged-v1-plugins). |
+
+Use **direct tool exposure** with 2.3.0. Its scheduler can expose eligible CodeMode tools directly when the `execute` gateway is denied. The public Promise plugin interface cannot require that gateway per request, so the bridge refuses the experimental CodeMode profile on 2.3.0 before loading a legacy target. The experimental CodeMode option on 2.0.27 retains separate semantics and falls outside the server-first preview profile.
 
 ## Install and configure on Windows
 
-Use stock OpenCode **2.0.27**. Download `opencode-v1-bridge-0.82.0-beta.4.tgz` and `SHA256SUMS.txt` from the [beta.4 release assets](https://github.com/Stiix72/opencode-v1-v2-bridge/releases/tag/v0.82.0-beta.4). The GitHub-generated source archives serve a different purpose. For a local source checkout, put its absolute directory in the configuration’s `package` field and skip the tarball steps.
+1. Save `opencode-v1-bridge-0.82.0-preview.1.tgz` and its companion `SHA256SUMS.txt` together. The PowerShell example below verifies the checksum and installs into a new local directory. GitHub’s generated source archives serve a different purpose. The [historical beta.4 release](https://github.com/Stiix72/opencode-v1-v2-bridge/releases/tag/v0.82.0-beta.4) has its own tarball and checksum.
+2. For isolated installation, use Node 20 or later. The offline packaging and installation checks used Node 24.20.0 and npm 11.19.0. OpenCode supplies its own plugin runtime. The bridge has no external npm dependencies and is marked `private: true` to prevent accidental npm publication. Provision the trusted V1 plugin and its dependencies separately.
 
-The archive declares Node 20 or later. The Windows installation was tested with Node 24.20.0 and npm 11.19.0. OpenCode supplies its own plugin runtime, so this workflow needs no separate Bun install. The bridge has no external npm dependencies. Install the trusted V1 plugin and its dependencies separately. The package’s `private: true` setting prevents npm publication and permits installation from the local archive.
-
-Use a dedicated password-protected OpenCode server bound to `127.0.0.1` for one trusted project and trusted clients. Keep compatibility commands out of shared servers, proxies, tunnels, and remotely reachable listeners. See [Security and trust boundaries](SECURITY.md) before enabling `targets[].commands`.
-
-1. Save both release assets in the same directory. The script below verifies the published checksum before installing.
-2. Install the verified tarball into a new disposable directory. Run the script from the directory containing the two assets. Change the destination if it already exists.
+Use a dedicated, password-protected OpenCode instance bound to `127.0.0.1`, with one trusted project and trusted clients. Keep the server off shared, proxied, tunneled and remotely reachable listeners. Read [Security and trust boundaries](SECURITY.md) before enabling compatibility commands.
 
 ```powershell
-$archive = (Resolve-Path -LiteralPath '.\opencode-v1-bridge-0.82.0-beta.4.tgz').Path
-$checksum = Get-Content -Raw -LiteralPath '.\SHA256SUMS.txt'
-if ($checksum.Trim() -notmatch '^([0-9A-Fa-f]{64})  opencode-v1-bridge-0\.82\.0-beta\.4\.tgz$') {
-  throw 'The checksum file must identify the beta.4 tarball.'
-}
-if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $Matches[1]) {
+$archiveName = 'opencode-v1-bridge-0.82.0-preview.1.tgz'
+$archive = (Resolve-Path -LiteralPath (Join-Path (Get-Location).Path $archiveName)).Path
+$checksum = (Get-Content -Raw -LiteralPath '.\SHA256SUMS.txt').Trim()
+$pattern = '^([0-9A-Fa-f]{64})  ' + [regex]::Escape($archiveName) + '$'
+if ($checksum -notmatch $pattern) { throw 'The checksum file must identify the preview tarball.' }
+$expected = $Matches[1]
+if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $expected) {
   throw 'Bridge archive SHA-256 mismatch.'
 }
 $adapterHome = Join-Path (Get-Location).Path 'opencode-bridge-local'
@@ -35,7 +42,7 @@ try {
 }
 ```
 
-3. In the disposable project’s `opencode.json`, add one bridge entry to `plugins`. Replace both example paths. Point `package` to the installed **bridge package directory**. Put the V1 plugin only in the bridge’s `targets` list.
+3. In the disposable project’s `opencode.json`, add one bridge entry to `plugins`. Replace both example paths. Point `package` to the installed **bridge package directory**. Put the V1 plugin only in the bridge’s `targets` list. Leave your normal profile and installation out of this workflow.
 
 ```json
 {
@@ -73,7 +80,7 @@ Add these keys under the bridge entry’s `options` only when the plugin needs t
 | `metadata: "live-json"` | Publishes supported JSON tool metadata as native progress. The historical durable metadata lifecycle and independent title behavior are unavailable. |
 | `targets[].commands` | Explicit, experimental opt-in for a target with `command.execute.before`. Trust the entire local server and all its clients. Leave it disabled for targets that work without it. The stock package exposes the producer only. An eligible consumer is required before the hook runs. |
 
-## What works
+## Implemented server features
 
 - **Plugin activation.** Load trusted V1 entry files, installed packages, or exported package subpaths. Provide per-plugin JSON factory options when needed. Declared `dispose` hooks participate in activation cleanup.
 - **Direct legacy tools.** Register supported argument schemas under the original tool names and keep the plugin’s argument parser and executor. Canonical registered tools support before-hook argument changes and supported after-hook result changes. OpenCode owns tool selection, authorization, and scheduling.
@@ -82,13 +89,13 @@ Add these keys under the bridge entry’s `options` only when the plugin needs t
 
 ## Compatibility limits
 
-| Area | Beta scope |
+| Area | Preview scope |
 | --- | --- |
 | V1 client | The four operations above have reduced contracts. The other 79 known V1 methods are unavailable through this entrypoint, including `client.command.list`, `client.event.subscribe`, `client.session.messages`, session prompting, and provider, auth, shell/PTY, and TUI operations. |
 | Hooks | `config`, `chat.params`, `chat.headers`, and auth hooks are unsupported. Unsupported declared hooks can cause activation to fail. |
-| Tools | The beta scope is direct tools with admitted schemas and canonical names. CodeMode is an experimental route with different scheduling and hook semantics. |
+| Tools | The preview scope is direct tools with admitted schemas and canonical names. The 2.3.0 entrypoint refuses CodeMode. The 2.0.27 experimental CodeMode route has different scheduling and hook semantics. |
 | Permissions | The standard server profile does not supply V1 `ToolContext.ask`. The experimental, opt-in pending-permission observer reports certain already-pending native requests. It has no authority to make or change a decision. |
-| Events and UI | Session deletion, historical event replay, per-delta parity, and end-to-end TUI command output are outside the supported beta workflow. The experimental `client.tui.showToast` capability is excluded from beta.4. |
+| Events and UI | Session deletion, historical event replay, per-delta parity, and end-to-end TUI command output are outside the supported server-first workflow. The public preview entrypoint does not supply `client.tui.showToast`. |
 
 ## How the host shapes compatibility
 
@@ -99,7 +106,7 @@ Add these keys under the bridge entry’s `options` only when the plugin needs t
 
 ## Tested with unchanged V1 plugins
 
-The plugins listed here are independent third-party projects used to test compatibility. Each is developed and distributed separately by its own maintainers.
+The plugins listed here are independent third-party projects used to test compatibility. Each is developed and distributed separately by its own maintainers. The results identify the exact earlier release or offline scope that produced them.
 
 | Plugin | Evidence |
 | --- | --- |
@@ -115,17 +122,21 @@ The frozen beta.2 server-only run recorded an audit failure. A separate re-audit
 
 ## Known issues and troubleshooting
 
-- Historical Windows ConPTY runs hit `EPIPE` during the host’s terminal exit write. The cause of the broken stdout destination remains unresolved. Server-only shutdown passed in the scoped native checks. Command-output refusal with no consumer at entry was observed on beta.2. Beta.4 native command-output acceptance and the distinct after-disconnect NO-CONSUMER case remain open.
+- Historical Windows ConPTY runs hit EPIPE during the host's terminal exit write. The cause of the broken stdout destination remains unresolved. Server-only shutdown passed in the earlier scoped native checks. Command-output refusal with no consumer at entry was observed on beta.2. Native command-output caller ownership, the distinct after-disconnect NO-CONSUMER case, and the separate missing-toast-consumer test remain open.
+- A legacy plugin factory that never settles can leave activation pending and block later plugins. The disposal timeout does not bound factory initialization.
+- The 2.3.0 adapter observes the native abort signal, rejects new progress or a successful result after cancellation, and ignores first-token telemetry when projecting legacy events. It cannot undo side effects or forcibly stop a non-cooperative plugin.
 - A state-changing tool can finish its write before result publication or delivery fails. Check persisted state before retrying a failed command or tool.
 - For activation errors, check the host version, installed bridge directory, target entrypoint and dependencies, and selected profiles. Read the nested activation error. To disable the bridge, remove its entry from `plugins` and let OpenCode dispose the activation.
 
-## Release source and package
+## Verification and package provenance
 
-The release tag identifies the exact package inputs. This default-branch guide reflects evidence and safety guidance established after the archive was frozen. Use this guide if the bundled README still describes native acceptance as pending. See [Release provenance](RELEASE-PROVENANCE.md) for the archive identity and source relationship.
+Preview.1 was checked offline with Node, standalone Bun, declaration checks, and four source-backed host-contract tests. The tests support the exact implemented boundaries. Native 2.3.0 scheduler/database acceptance and the new 2.0.27 regression remain open. A separate Windows custody control verified probe creation and cleanup but failed its cumulative Job count. That control ran no OpenCode and provides no compatibility evidence.
+
+See [Release provenance](RELEASE-PROVENANCE.md) for the inspected source and package identities, and [Remaining Issues](Remaining%20Issues.md) for the compatibility gaps.
 
 ## Work from source
 
-Use Node 24 for the verified development workflow. The ESM JavaScript in `server.js` and `src/` is the implementation used by OpenCode. The checked-in declarations describe its public API. There is no compilation step and no runtime package to download.
+From a development source checkout, use Node 24 for the verified workflow. The installable tarball excludes the development test scripts. The ESM JavaScript in `server.js` and `src/` is the implementation used by OpenCode. The checked-in declarations describe its public API. There is no compilation step and no runtime package to download.
 
 ```text
 npm run build

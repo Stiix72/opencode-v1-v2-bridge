@@ -2,11 +2,11 @@
 
 ## OpenCode V1 Bridge: missing functionality, limitations, and opportunities to contribute
 
-OpenCode V1 Bridge is a **server-first compatibility adapter** intended to run supported, unchanged OpenCode V1 plugins on **stock OpenCode V2.0.27**. It is functional, but it does **not** reproduce the entire V1 plugin environment. Some features are implemented only in experimental development candidates; others lack full native-host acceptance; and some cannot be reproduced faithfully using the public interfaces available in V2.0.27.
+OpenCode V1 Bridge is a **server-first compatibility adapter** for supported, unchanged V1 plugins. The **offline-verified experimental preview** admits exact OpenCode **2.3.0** and **2.0.27**. Current-candidate genuine-host acceptance is open on both versions. Direct tool exposure is required on 2.3.0. The public Promise API cannot require CodeMode’s `execute` gateway per request, so this version refuses the experimental CodeMode profile before legacy plugin activation.
 
-This document explains the principal known gaps, why they exist, and approaches contributors might investigate. It is **not** a claim that every V1 API has been individually implemented or exhaustively tested. The public [README](README.md) should remain the authority for which features are actually supported in a particular release.
+The historical `0.82.0-beta.4` archive passed a scoped native scheduler test on stock OpenCode 2.0.27. The unchanged Personality `setMood` ran once, persisted the expected output and project state, and delivered the result to the next scripted request. That server-only evidence belongs to beta.4. References to earlier tests and release behavior below identify their historical scope.
 
-The initial release scope is server-first. Experimental work is outside the supported server-first workflow. Where `0.82.0-beta.4` exposes an experimental option, this document identifies it explicitly. The exact beta.4 archive passed a scoped native scheduler test on stock OpenCode 2.0.27. The unchanged Personality `setMood` ran once, persisted the expected output and project state, and delivered the result to the next scripted request. That acceptance was server-only. The separate command-output and TUI findings remain open.
+Use a dedicated password-protected loopback server for one trusted project and trusted clients. See [Security](SECURITY.md), [README](README.md), and [Release provenance](RELEASE-PROVENANCE.md).
 
 ### How to read the status labels
 
@@ -218,6 +218,14 @@ The internal restricted adapter supports settled `connected` and `disabled` stat
 The genuine beta.1 host witness successfully selected and ran the unchanged Personality `setMood` tool. The beta.2 host witness recorded loading, session creation, command refusal, and shutdown. Its frozen verdict remains **FAIL** on the database watermark check. A separate supplemental re-audit passed after identifying the auditor’s SQLite row-prototype comparison defect. The final licensed package still requires genuine scheduler acceptance against the **exact package bytes intended for distribution**. This is a release-qualification task, not a missing V1 API.
 
 ---
+
+## 11. Legacy plugin factory initialization can hang indefinitely
+
+**Status:** Known limitation, deferred. Source inspection established this behavior. A genuine-host reproduction has yet to be established.
+
+The bridge awaits a legacy plugin factory during activation. If the factory never settles, activation can remain pending and later legacy plugins can be blocked from loading. The existing lifecycle cleanup timeout does not bound factory initialization.
+
+A future initialization deadline could revoke bridge capabilities available to the pending factory, prevent late activation, and dispose hooks returned after the deadline. The deadline cannot forcibly stop arbitrary plugin work already running in the process.
 
 ## Suggested contribution priorities
 

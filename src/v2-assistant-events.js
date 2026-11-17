@@ -1,4 +1,4 @@
-/** Exact v2.0.27 terminal-assistant -> V1 message.updated subset.
+/** Shared terminal-assistant -> V1 message.updated subset.
  * Opt in with bindings.createEventMapper: () => createV2027AssistantEventMapper()
  * and an explicit bindings.onEventError reporter.
  * One instance belongs to one subscription. This is not full V1 event emulation.
@@ -9,7 +9,7 @@ const record = value => value !== null && typeof value === 'object' && !Array.is
 const finite = value => typeof value === 'number' && Number.isFinite(value)
 const finishes = new Set(['stop', 'length', 'tool-calls', 'content-filter', 'error', 'unknown'])
 const ignored = new Set([
-  'session.step.started', 'session.step.streamed',
+  'session.step.started', 'session.step.first-token', 'session.step.streamed',
   'session.text.started', 'session.text.delta', 'session.text.ended',
   'session.reasoning.started', 'session.reasoning.delta', 'session.reasoning.ended',
   'session.tool.input.started', 'session.tool.input.delta', 'session.tool.input.ended',

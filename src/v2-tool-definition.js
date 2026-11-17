@@ -1,10 +1,7 @@
 import { mapLegacyToolResult, validateNativeLegacyResult } from './legacy-tool-results.js'
 import { snapshotPermissionContext } from './v2-permission-binding.js'
 /**
- * Promise-plugin Tool.Info mapper. Contract checked against the archived
- * @opencode/schema/tool and @opencode/plugin/promise/tool source. The archive
- * is pinned to v2.0.27 for offline source-backed verification. Native model
- * scheduling remains unverified.
+ * Map legacy definitions to the shared public Promise-plugin Tool.Info contract.
  */
 export class V2ToolDefinitionError extends Error {
   constructor(message, cause) {
@@ -49,8 +46,7 @@ export function makeV2ToolDefinition(descriptor, {
     name,
     description,
     input: inputSchema,
-    // Exact v2.0.27 defaults omitted options into CodeMode. Legacy names are
-    // direct by default; explicit code-mode uses the host gateway/catalog.
+    // Both hosts recognize codemode: false for direct exposure.
     options: Object.freeze({ codemode: toolExposure === 'code-mode' }),
     async execute(input, context) {
       const native = permissionBinding ? snapshotPermissionContext(context) : undefined
@@ -59,11 +55,17 @@ export function makeV2ToolDefinition(descriptor, {
         if (!invocation || invocation.ask !== undefined || ['sessionID','messageID','agent'].some(k => invocation[k] !== native[k]) || invocation.abort !== native.signal) throw new V2ToolDefinitionError('Permission binding requires unchanged native identity/signal and exclusive ask ownership')
         invocation = { ...invocation, ask: input => permissionBinding.ask(native, input) }
       }
+      const signal = invocation?.abort
+      signal?.throwIfAborted()
       const legacyResult = await executeLegacy(input, invocation)
+      // On 2.3.0 reading the native signal opts into cooperative stop. A legacy
+      // callback can ignore it and return normally during the host's grace period.
+      signal?.throwIfAborted()
       const converted = await convertResult(legacyResult, name, { toolExposure })
       let result
       try { result = validateNativeLegacyResult(converted, { toolExposure }) }
       catch (cause) { throw new V2ToolDefinitionError(`Tool ${name}: invalid V2 result: ${cause.message}`, cause) }
+      signal?.throwIfAborted()
       return result
     },
   })
